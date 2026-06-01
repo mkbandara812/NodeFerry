@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const router = useRouter();
 
   const handleCheckout = async () => {
@@ -18,35 +18,10 @@ export default function Pricing() {
     }
 
     setLoading(true);
-    try {
-      const variantId = isYearly 
-        ? process.env.NEXT_PUBLIC_LEMON_YEARLY_VARIANT_ID 
-        : process.env.NEXT_PUBLIC_LEMON_MONTHLY_VARIANT_ID;
-
-      if (!variantId) {
-        alert("Variant IDs are not configured in environment variables.");
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch('/api/lemonsqueezy/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variantId })
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Failed to create checkout session");
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
-      setLoading(false);
-    }
+    // Using the direct checkout link provided by the user
+    // Appending user_id so the webhook knows which account to upgrade
+    const checkoutUrl = `https://nodeferry.lemonsqueezy.com/checkout/buy/128c8bcc-a850-4909-a7b8-1edda39a124a?embed=1&checkout[custom][user_id]=${userId}`;
+    window.location.href = checkoutUrl;
   };
 
   return (
