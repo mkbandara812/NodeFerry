@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { UploadCloud, CheckCircle, File as FileIcon, Lock, Sparkles, ShieldAlert, Layers, ShieldCheck, Send, Music, Image as ImageIcon, Video, FileArchive } from 'lucide-react';
+import { UploadCloud, CheckCircle, File as FileIcon, Lock, Sparkles, ShieldAlert, Layers, ShieldCheck, Send, Music, Image as ImageIcon, Video, FileArchive, LogOut } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import AdComponent from '@/components/AdComponent';
 import Link from 'next/link';
@@ -79,6 +79,38 @@ export default function MainApp({
       await wakeLockRef.current.release();
       wakeLockRef.current = null;
     }
+  };
+
+  const resetRoom = () => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    if (dataChannelRef.current) {
+      dataChannelRef.current.close();
+      dataChannelRef.current = null;
+    }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    releaseWakeLock();
+
+    setRoomId('');
+    setConnected(false);
+    setFiles([]);
+    setCurrentFileIndex(0);
+    setAuthError('');
+    setRemoteBrand('');
+    setMessages([]);
+    setTransferProgress(0);
+    setTransferSpeed('');
+    setEta('');
+    setIsSecureE2EE(false);
+    setShowPasswordPrompt(false);
+    setRoomPassword('');
+    
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   useEffect(() => {
@@ -561,9 +593,12 @@ export default function MainApp({
         <div className="w-full bg-white rounded-[2rem] p-6 md:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.4)] flex flex-col relative z-20 overflow-hidden text-slate-900">
           
           {authError && !showPasswordPrompt && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center gap-3 text-red-600 animate-in fade-in">
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-                  <span className="font-medium text-sm">{authError}</span>
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col items-center justify-center gap-3 text-red-600 animate-in fade-in">
+                  <div className="flex items-center gap-3">
+                    <ShieldAlert className="w-5 h-5 shrink-0" />
+                    <span className="font-medium text-sm">{authError}</span>
+                  </div>
+                  <button onClick={resetRoom} className="mt-1 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition-colors">Start Over</button>
               </div>
           )}
 
@@ -597,6 +632,13 @@ export default function MainApp({
                   className="w-full px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
                   >
                   Copy Join Link
+                  </button>
+
+                  <button
+                  onClick={resetRoom}
+                  className="w-full mt-1 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl font-bold transition-colors text-sm"
+                  >
+                  Cancel / Start Over
                   </button>
               </div>
               ) : (
@@ -645,9 +687,14 @@ export default function MainApp({
           </div>
           ) : (
           <div className="animate-in slide-in-from-bottom-4 duration-500 flex flex-col items-center w-full">
-              <div className="flex items-center justify-center gap-2 mb-6 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full w-full">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-bold text-sm">Securely Connected</span>
+              <div className="flex items-center justify-between mb-6 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full w-full">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-bold text-sm">Securely Connected</span>
+                </div>
+                <button onClick={resetRoom} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="Disconnect">
+                   <LogOut className="w-4 h-4" />
+                </button>
               </div>
               
               <input 
