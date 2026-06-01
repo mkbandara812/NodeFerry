@@ -246,7 +246,8 @@ export default function MainApp({
   };
 
   const connectSignalingServer = async (id: string, isInitiator: boolean) => {
-    const ws = new WebSocket(`ws://localhost:8787/room/${id}`);
+    const signalingUrl = process.env.NEXT_PUBLIC_SIGNALING_URL || 'ws://localhost:8787';
+    const ws = new WebSocket(`${signalingUrl}/room/${id}`);
     wsRef.current = ws;
 
     ws.onopen = async () => {
