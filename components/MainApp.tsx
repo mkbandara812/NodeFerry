@@ -62,6 +62,25 @@ export default function MainApp({
   const lastChunkTimeRef = useRef<number>(0);
   const lastChunkSizeRef = useRef<number>(0);
 
+  const wakeLockRef = useRef<any>(null);
+
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+      }
+    } catch (err) {
+      console.error('Wake Lock error:', err);
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    if (wakeLockRef.current !== null) {
+      await wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setBaseUrl(window.location.origin);
@@ -90,6 +109,7 @@ export default function MainApp({
           setAuthError('Connection lost. The peer may have disconnected.');
           setConnected(false);
           setIsSecureE2EE(false);
+          releaseWakeLock();
       }
     };
 
@@ -100,6 +120,7 @@ export default function MainApp({
       receiveChannel.onopen = () => {
           setConnected(true);
           setShowPasswordPrompt(false);
+          requestWakeLock();
           if (isInit && isPro && myBrand) {
               receiveChannel.send(JSON.stringify({ type: 'brand', name: myBrand }));
           }
@@ -233,6 +254,7 @@ export default function MainApp({
     dataChannel.binaryType = 'arraybuffer';
     dataChannel.onopen = () => {
         setConnected(true);
+        requestWakeLock();
         if (isPro && myBrand) {
             dataChannel.send(JSON.stringify({ type: 'brand', name: myBrand }));
         }
